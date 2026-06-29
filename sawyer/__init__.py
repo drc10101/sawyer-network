@@ -18,3 +18,7 @@ SPDX-License-Identifier: BSL-1.1 — See LICENSE for details.
 
 __version__ = "0.1.0"
 __author__ = "InFill Systems, LLC"
+
+from sawyer.server import SawyerServer
+
+__all__ = ["SawyerServer"]
