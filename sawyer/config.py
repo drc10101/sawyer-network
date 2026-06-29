@@ -28,6 +28,9 @@ class SawyerConfig:
     max_experts: int = 2  # Max experts to host concurrently
     max_vram_gb: float | None = None  # Auto-detect if None
 
+    # Storage
+    database_url: str = "~/.sawyer/sawyer.db"  # SQLite database path
+
     # Performance
     request_timeout: float = 30.0  # seconds
     heartbeat_interval: float = 60.0  # seconds
