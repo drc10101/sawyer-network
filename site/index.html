@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sawyer — Distributed MoE Inference Network</title>
+  <meta name="description" content="Run frontier AI models for $5/month. Volunteer your GPU, earn money. The load is split. Friends help.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚙</text></svg>">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #ffffff;
+      --bg-alt: #f8f9fa;
+      --bg-card: #ffffff;
+      --text: #050505;
+      --text-secondary: #525252;
+      --text-tertiary: #8a8a8a;
+      --border: #e5e5e5;
+      --accent: #12c7ef;
+      --accent-hover: #0eb4d9;
+      --accent-light: rgba(18, 199, 239, 0.08);
+      --accent-glow: rgba(18, 199, 239, 0.15);
+      --code-bg: #1a1a1a;
+      --code-text: #e5e5e5;
+      --radius: 8px;
+      --radius-lg: 12px;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.06);
+      --shadow-lg: 0 8px 30px rgba(0,0,0,0.08);
+      --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --mono: 'JetBrains Mono', ui-monospace, monospace;
+      --max-w: 1120px;
+    }
+
+    [data-theme="dark"] {
+      --bg: #0a0a0a;
+      --bg-alt: #141414;
+      --bg-card: #1a1a1a;
+      --text: #ededed;
+      --text-secondary: #a3a3a3;
+      --text-tertiary: #666666;
+      --border: #2a2a2a;
+      --accent-light: rgba(18, 199, 239, 0.12);
+      --accent-glow: rgba(18, 199, 239, 0.2);
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.2);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.3);
+      --shadow-lg: 0 8px 30px rgba(0,0,0,0.4);
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { color: var(--accent-hover); }
+
+    .container { max-width: var(--max-w); margin: 0 auto; padding: 0 24px; }
+
+    /* ── Header ── */
+    header {
+      position: sticky; top: 0; z-index: 100;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+    }
+    [data-theme="dark"] header { background: rgba(10,10,10,0.85); }
+    header .container {
+      display: flex; align-items: center; justify-content: space-between;
+      height: 60px;
+    }
+    .logo {
+      display: flex; align-items: center; gap: 10px;
+      font-weight: 700; font-size: 18px; color: var(--text);
+    }
+    .logo svg { width: 28px; height: 28px; }
+    .nav-links { display: flex; align-items: center; gap: 28px; }
+    .nav-links a {
+      font-size: 14px; font-weight: 500; color: var(--text-secondary);
+      transition: color 0.15s;
+    }
+    .nav-links a:hover { color: var(--text); }
+    .header-actions { display: flex; align-items: center; gap: 12px; }
+
+    /* Theme toggle */
+    .theme-toggle {
+      background: none; border: 1px solid var(--border); border-radius: var(--radius);
+      width: 36px; height: 36px; cursor: pointer; display: flex; align-items: center;
+      justify-content: center; color: var(--text-secondary); font-size: 16px;
+      transition: all 0.15s;
+    }
+    .theme-toggle:hover { color: var(--text); border-color: var(--text-tertiary); }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 10px 20px; border-radius: var(--radius); font-size: 14px; font-weight: 500;
+      cursor: pointer; transition: all 0.15s; border: none; text-decoration: none;
+    }
+    .btn-primary {
+      background: var(--accent); color: #000;
+    }
+    .btn-primary:hover { background: var(--accent-hover); color: #000; }
+    .btn-secondary {
+      background: var(--bg); color: var(--text); border: 1px solid var(--border);
+    }
+    .btn-secondary:hover { border-color: var(--text-tertiary); }
+    .btn-large { padding: 14px 28px; font-size: 16px; border-radius: var(--radius-lg); }
+
+    /* ── Hero ── */
+    .hero {
+      padding: 100px 0 80px;
+      text-align: center;
+    }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 16px; border-radius: 20px;
+      background: var(--accent-light); color: var(--accent);
+      font-size: 13px; font-weight: 500; margin-bottom: 28px;
+      border: 1px solid rgba(18,199,239,0.2);
+    }
+    .hero-badge .dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--accent);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    .hero h1 {
+      font-size: clamp(40px, 6vw, 64px); font-weight: 700;
+      line-height: 1.1; letter-spacing: -0.03em;
+      margin-bottom: 20px;
+    }
+    .hero h1 .accent { color: var(--accent); }
+    .hero p {
+      font-size: 18px; color: var(--text-secondary);
+      max-width: 600px; margin: 0 auto 36px;
+      line-height: 1.7;
+    }
+    .hero-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+    /* ── Architecture Diagram ── */
+    .arch-section { padding: 80px 0; }
+    .section-label {
+      font-size: 13px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.08em; color: var(--accent); margin-bottom: 12px;
+    }
+    .section-title {
+      font-size: clamp(28px, 4vw, 36px); font-weight: 700;
+      letter-spacing: -0.02em; margin-bottom: 16px;
+    }
+    .section-desc {
+      font-size: 16px; color: var(--text-secondary);
+      max-width: 560px; line-height: 1.7; margin-bottom: 48px;
+    }
+
+    .arch-grid {
+      display: grid; grid-template-columns: 1fr;
+      gap: 1px; background: var(--border); border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+    .arch-card {
+      background: var(--bg-card); padding: 28px;
+    }
+    .arch-card h3 {
+      font-size: 15px; font-weight: 600; margin-bottom: 6px;
+    }
+    .arch-card p { font-size: 14px; color: var(--text-secondary); line-height: 1.6; }
+
+    @media (min-width: 768px) {
+      .arch-grid { grid-template-columns: 1fr 1fr 1fr; }
+    }
+
+    /* ── How It Works ── */
+    .how-section { padding: 80px 0; background: var(--bg-alt); }
+    .steps {
+      display: grid; grid-template-columns: 1fr; gap: 32px;
+      counter-reset: step;
+    }
+    .step {
+      counter-increment: step;
+      display: flex; gap: 20px; align-items: flex-start;
+    }
+    .step::before {
+      content: counter(step);
+      flex-shrink: 0; width: 40px; height: 40px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 50%; background: var(--accent); color: #000;
+      font-weight: 700; font-size: 16px;
+    }
+    .step-content h3 { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+    .step-content p { font-size: 14px; color: var(--text-secondary); line-height: 1.6; }
+
+    @media (min-width: 768px) {
+      .steps { grid-template-columns: 1fr 1fr; }
+    }
+
+    /* ── Pricing ── */
+    .pricing-section { padding: 80px 0; }
+    .pricing-grid {
+      display: grid; grid-template-columns: 1fr; gap: 20px;
+    }
+    .pricing-card {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 32px;
+      position: relative; transition: all 0.2s;
+    }
+    .pricing-card:hover { border-color: var(--accent); box-shadow: var(--shadow-md); }
+    .pricing-card.featured {
+      border-color: var(--accent);
+      background: var(--accent-light);
+    }
+    .pricing-card.featured::before {
+      content: 'Most Popular';
+      position: absolute; top: -10px; right: 20px;
+      background: var(--accent); color: #000;
+      font-size: 11px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.05em; padding: 4px 10px; border-radius: 10px;
+    }
+    .pricing-tier { font-size: 14px; font-weight: 600; color: var(--accent); margin-bottom: 4px; }
+    .pricing-name { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+    .pricing-price {
+      font-size: 40px; font-weight: 700; letter-spacing: -0.02em;
+    }
+    .pricing-price span { font-size: 16px; font-weight: 400; color: var(--text-secondary); }
+    .pricing-tokens {
+      font-size: 14px; color: var(--text-secondary); margin: 12px 0 20px;
+      padding-bottom: 20px; border-bottom: 1px solid var(--border);
+    }
+    .pricing-features { list-style: none; }
+    .pricing-features li {
+      font-size: 14px; color: var(--text-secondary);
+      padding: 6px 0; display: flex; align-items: center; gap: 8px;
+    }
+    .pricing-features li::before {
+      content: '\2713'; color: var(--accent); font-weight: 700; font-size: 14px;
+    }
+    .pricing-cta { margin-top: 24px; width: 100%; }
+
+    @media (min-width: 768px) {
+      .pricing-grid { grid-template-columns: 1fr 1fr 1fr; }
+    }
+
+    /* ── Host Economics ── */
+    .host-section { padding: 80px 0; background: var(--bg-alt); }
+    .host-grid {
+      display: grid; grid-template-columns: 1fr; gap: 20px;
+    }
+    .host-card {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 28px;
+    }
+    .host-card h3 {
+      font-size: 15px; font-weight: 600; margin-bottom: 8px;
+    }
+    .host-card .value {
+      font-size: 32px; font-weight: 700; color: var(--accent); letter-spacing: -0.02em;
+    }
+    .host-card p { font-size: 14px; color: var(--text-secondary); line-height: 1.6; margin-top: 8px; }
+
+    @media (min-width: 768px) {
+      .host-grid { grid-template-columns: 1fr 1fr 1fr 1fr; }
+    }
+
+    /* ── Models ── */
+    .models-section { padding: 80px 0; }
+    .models-table {
+      width: 100%; border-collapse: collapse;
+      font-size: 14px;
+    }
+    .models-table th {
+      text-align: left; padding: 12px 16px;
+      font-weight: 600; font-size: 12px; text-transform: uppercase;
+      letter-spacing: 0.06em; color: var(--text-tertiary);
+      border-bottom: 1px solid var(--border);
+    }
+    .models-table td {
+      padding: 14px 16px; border-bottom: 1px solid var(--border);
+      color: var(--text-secondary);
+    }
+    .models-table td:first-child { font-weight: 600; color: var(--text); }
+    .models-table .tag {
+      display: inline-block; padding: 2px 8px; border-radius: 4px;
+      font-size: 12px; font-weight: 500;
+      background: var(--accent-light); color: var(--accent);
+    }
+    .table-wrap { overflow-x: auto; }
+
+    /* ── Code Block ── */
+    .code-section { padding: 80px 0; background: var(--bg-alt); }
+    pre {
+      background: var(--code-bg); color: var(--code-text);
+      padding: 24px; border-radius: var(--radius-lg);
+      overflow-x: auto; font-family: var(--mono); font-size: 13px;
+      line-height: 1.7;
+    }
+    pre .comment { color: #666; }
+    pre .cmd { color: var(--accent); }
+    pre .flag { color: #f0a; }
+    pre .output { color: #8a8; }
+
+    /* ── CTA ── */
+    .cta-section {
+      padding: 100px 0; text-align: center;
+    }
+    .cta-section h2 {
+      font-size: clamp(32px, 5vw, 48px); font-weight: 700;
+      letter-spacing: -0.02em; margin-bottom: 16px;
+    }
+    .cta-section p {
+      font-size: 18px; color: var(--text-secondary);
+      max-width: 480px; margin: 0 auto 32px;
+    }
+
+    /* ── Footer ── */
+    footer {
+      padding: 40px 0; border-top: 1px solid var(--border);
+    }
+    footer .container {
+      display: flex; justify-content: space-between; align-items: center;
+      flex-wrap: wrap; gap: 16px;
+    }
+    .footer-left { font-size: 14px; color: var(--text-tertiary); }
+    .footer-links { display: flex; gap: 20px; }
+    .footer-links a { font-size: 13px; color: var(--text-tertiary); }
+    .footer-links a:hover { color: var(--text); }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .hero { padding: 60px 0 48px; }
+      .nav-links { display: none; }
+      .arch-grid { grid-template-columns: 1fr; }
+      .pricing-grid { grid-template-columns: 1fr; }
+      .host-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="container">
+      <a href="/" class="logo">
+        <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="14" cy="14" r="12" stroke="var(--accent)" stroke-width="2"/>
+          <path d="M9 14h10M14 9v10" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="14" cy="14" r="3" fill="var(--accent)"/>
+        </svg>
+        Sawyer
+      </a>
+      <nav class="nav-links">
+        <a href="#how-it-works">How It Works</a>
+        <a href="#pricing">Pricing</a>
+        <a href="#hosting">Host a Node</a>
+        <a href="#models">Models</a>
+        <a href="https://github.com/drc10101/sawyer" target="_blank">GitHub</a>
+      </nav>
+      <div class="header-actions">
+        <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
+          <span id="theme-icon">&#9790;</span>
+        </button>
+        <a href="#pricing" class="btn btn-primary">Get Started</a>
+      </div>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="container">
+      <div class="hero-badge">
+        <span class="dot"></span>
+        Now in Early Access
+      </div>
+      <h1>The load is split.<br><span class="accent">Friends help.</span></h1>
+      <p>Run frontier MoE models for $5/month. Volunteer your GPU, earn real money. A distributed inference network where every node carries a piece of the load.</p>
+      <div class="hero-actions">
+        <a href="#pricing" class="btn btn-primary btn-large">Start for $5/mo</a>
+        <a href="#how-it-works" class="btn btn-secondary btn-large">See How It Works</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="arch-section" id="architecture">
+    <div class="container">
+      <div class="section-label">Architecture</div>
+      <div class="section-title">Mixture-of-Experts, Distributed</div>
+      <div class="section-desc">MoE models activate only 25% of parameters per token. Each expert is independent, so they split across consumer GPUs naturally. No tensor parallelism required.</div>
+      <div class="arch-grid">
+        <div class="arch-card">
+          <h3>Router</h3>
+          <p>Receives your request, runs the gating network locally, and activates only the 2-6 relevant experts across the network. Aggregates the results back to you.</p>
+        </div>
+        <div class="arch-card">
+          <h3>Expert Nodes</h3>
+          <p>Each volunteer GPU hosts 1-3 expert weight files (~1.5GB each for Mixtral). A single RTX 3090 can serve inference requests while you game or work.</p>
+        </div>
+        <div class="arch-card">
+          <h3>Bedrock Identity</h3>
+          <p>Every node holds a cryptographic identity from Bedrock. Consent tokens gate which models a node will serve. Every inference is audit-logged.</p>
+        </div>
+        <div class="arch-card">
+          <h3>Token Economics</h3>
+          <p>$5/month gives you a token budget. Tokens debit per inference. Hosts earn a 70% share of what you spend, proportional to compute contributed.</p>
+        </div>
+        <div class="arch-card">
+          <h3>Smart Routing</h3>
+          <p>Adaptive routing balances load (60%) and latency (40%). Falls back to redundant experts on timeout. No single point of failure.</p>
+        </div>
+        <div class="arch-card">
+          <h3>Quantized Models</h3>
+          <p>Q4_K_M quantization fits frontier models on consumer hardware. Mixtral-8x7B expert = ~1.5GB. Full model = ~24GB. Each piece runs independently.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="how-section" id="how-it-works">
+    <div class="container">
+      <div class="section-label">How It Works</div>
+      <div class="section-title">From request to result in 5 steps</div>
+      <div class="section-desc">No setup required. Subscribe, get an API key, and send requests like any other inference API.</div>
+      <div class="steps">
+        <div class="step">
+          <div class="step-content">
+            <h3>Subscribe</h3>
+            <p>Pick a tier. Get an API key instantly. Explorer starts at $5/month with 500K tokens.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-content">
+            <h3>Send a Request</h3>
+            <p>Use the Sawyer API like any inference endpoint. The router receives your prompt and token embedding.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-content">
+            <h3>Router Selects Experts</h3>
+            <p>The gating network identifies which 2-6 experts are needed. Only those experts activate. The rest stay dormant.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-content">
+            <h3>Nodes Compute in Parallel</h3>
+            <p>Expert nodes run forward passes concurrently. Average latency: 50-200ms per expert on consumer hardware.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-content">
+            <h3>Get Your Result</h3>
+            <p>The router aggregates expert outputs and returns your response. Tokens are debited from your budget.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-content">
+            <h3>Hosts Get Paid</h3>
+            <p>70% of what you spend goes to the nodes that served you. Monthly or quarterly payouts via Stripe Connect.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="pricing-section" id="pricing">
+    <div class="container">
+      <div class="section-label">Pricing</div>
+      <div class="section-title">Cheap enough to experiment, powerful enough to ship</div>
+      <div class="section-desc">No per-token surprises. Fixed monthly budgets with rollover. Cancel anytime.</div>
+      <div class="pricing-grid">
+        <div class="pricing-card">
+          <div class="pricing-tier">Explorer</div>
+          <div class="pricing-name">Starter</div>
+          <div class="pricing-price">$5<span>/mo</span></div>
+          <div class="pricing-tokens">500,000 tokens per month</div>
+          <ul class="pricing-features">
+            <li>All supported models</li>
+            <li>Token rollover (1 month)</li>
+            <li>Standard routing</li>
+            <li>Community support</li>
+          </ul>
+          <a href="#" class="btn btn-secondary pricing-cta">Get Started</a>
+        </div>
+        <div class="pricing-card featured">
+          <div class="pricing-tier">Adventurer</div>
+          <div class="pricing-name">Developer</div>
+          <div class="pricing-price">$15<span>/mo</span></div>
+          <div class="pricing-tokens">2,000,000 tokens per month</div>
+          <ul class="pricing-features">
+            <li>All supported models</li>
+            <li>Token rollover (1 month)</li>
+            <li>Priority routing</li>
+            <li>Email support</li>
+          </ul>
+          <a href="#" class="btn btn-primary pricing-cta">Get Started</a>
+        </div>
+        <div class="pricing-card">
+          <div class="pricing-tier">Pioneer</div>
+          <div class="pricing-name">Production</div>
+          <div class="pricing-price">$40<span>/mo</span></div>
+          <div class="pricing-tokens">10,000,000 tokens per month</div>
+          <ul class="pricing-features">
+            <li>All supported models</li>
+            <li>Token rollover (1 month)</li>
+            <li>Adaptive routing (priority)</li>
+            <li>Direct support</li>
+          </ul>
+          <a href="#" class="btn btn-secondary pricing-cta">Get Started</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="host-section" id="hosting">
+    <div class="container">
+      <div class="section-label">Host a Node</div>
+      <div class="section-title">Turn idle GPU time into real income</div>
+      <div class="section-desc">One command to join. Your GPU serves expert inference requests in the background. You earn money while your machine sits idle.</div>
+      <div class="host-grid">
+        <div class="host-card">
+          <h3>70% Host Share</h3>
+          <div class="value">70%</div>
+          <p>Of every token you serve goes to you. The other 30% sustains the network routing and infrastructure.</p>
+        </div>
+        <div class="host-card">
+          <h3>Min Payout</h3>
+          <div class="value">$10</div>
+          <p>Monthly payout threshold. Or $25 for quarterly. Via Stripe Connect. 1099-K tax reporting handled automatically.</p>
+        </div>
+        <div class="host-card">
+          <h3>One Command</h3>
+          <div class="value" style="font-size:24px;font-family:var(--mono);">$ sawyer register</div>
+          <p>Register your GPU, download expert weights, and start serving. Sawyer handles routing, payment, and health monitoring.</p>
+        </div>
+        <div class="host-card">
+          <h3>Verified Identity</h3>
+          <div class="value" style="font-size:24px;">KYC/AML</div>
+          <p>Stripe Connect Express handles onboarding, bank verification, and tax reporting. Your personal data stays with Stripe.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="models-section" id="models">
+    <div class="container">
+      <div class="section-label">Supported Models</div>
+      <div class="section-title">Frontier models on consumer hardware</div>
+      <div class="section-desc">Quantized MoE models that split across GPUs. Each expert runs independently, so the network scales horizontally.</div>
+      <div class="table-wrap">
+        <table class="models-table">
+          <thead>
+            <tr>
+              <th>Model</th>
+              <th>Params</th>
+              <th>Experts</th>
+              <th>Active/Token</th>
+              <th>Q4 Size</th>
+              <th>Expert Size</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Mixtral 8x7B</td>
+              <td>46.7B</td>
+              <td>8</td>
+              <td>2</td>
+              <td>~24 GB</td>
+              <td>~1.5 GB</td>
+            </tr>
+            <tr>
+              <td>DeepSeek-V2 Lite <span class="tag">new</span></td>
+              <td>15.7B</td>
+              <td>64 (shared)</td>
+              <td>6</td>
+              <td>~9 GB</td>
+              <td>varies</td>
+            </tr>
+            <tr>
+              <td>Qwen2.5 7B MoE</td>
+              <td>14.3B</td>
+              <td>60</td>
+              <td>4</td>
+              <td>~7 GB</td>
+              <td>varies</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="code-section">
+    <div class="container">
+      <div class="section-label">CLI</div>
+      <div class="section-title">From zero to inference in 3 commands</div>
+      <pre><code><span class="comment"># Create your account</span>
+<span class="cmd">$</span> sawyer account create --tier explorer
+
+<span class="comment"># Register your GPU as a host node</span>
+<span class="cmd">$</span> sawyer provider register --email you@example.com --name <span class="flag">"MyNode"</span>
+
+<span class="comment"># Start serving inference requests</span>
+<span class="cmd">$</span> sawyer serve --gpu
+
+<span class="output">Sawyer Node Started
+  Node:       sawyer-node-abc123
+  Experts:    mixtral-8x7b/e2, mixtral-8x7b/e5
+  GPU:        NVIDIA RTX 3090 (24 GB)
+  Status:     Healthy
+  Earnings:   $0.00</span></code></pre>
+    </div>
+  </section>
+
+  <section class="cta-section">
+    <div class="container">
+      <div class="section-label">Get Started</div>
+      <h2>Start building with frontier AI for $5/month.</h2>
+      <p>No credit card required for the Explorer tier. Cancel anytime. Your unused tokens roll over.</p>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+        <a href="#pricing" class="btn btn-primary btn-large">Start for $5/mo</a>
+        <a href="https://github.com/drc10101/sawyer" target="_blank" class="btn btn-secondary btn-large">View on GitHub</a>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container">
+      <div class="footer-left">
+        &copy; 2026 InFill Systems, LLC. All rights reserved.
+      </div>
+      <div class="footer-links">
+        <a href="https://github.com/drc10101/sawyer">GitHub</a>
+        <a href="https://infill.systems">InFill Systems</a>
+        <a href="#">Privacy</a>
+        <a href="#">Terms</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    function toggleTheme() {
+      const body = document.documentElement;
+      const current = body.getAttribute('data-theme');
+      const next = current === 'dark' ? 'light' : 'dark';
+      body.setAttribute('data-theme', next);
+      localStorage.setItem('sawyer-theme', next);
+      document.getElementById('theme-icon').innerHTML = next === 'dark' ? '&#9788;' : '&#9790;';
+    }
+    // Load saved theme
+    const saved = localStorage.getItem('sawyer-theme');
+    if (saved) {
+      document.documentElement.setAttribute('data-theme', saved);
+      document.getElementById('theme-icon').innerHTML = saved === 'dark' ? '&#9788;' : '&#9790;';
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      document.getElementById('theme-icon').innerHTML = '&#9788;';
+    }
+  </script>
+</body>
+</html>
