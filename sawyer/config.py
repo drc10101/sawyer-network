@@ -1,5 +1,6 @@
 """Sawyer configuration management."""
 
+import os
 from dataclasses import dataclass
 
 
@@ -36,6 +37,42 @@ class SawyerConfig:
     heartbeat_interval: float = 60.0  # seconds
     max_concurrent_requests: int = 10
 
+    # Provider / Payout settings
+    # Env vars: SAWYER_STRIPE_SECRET_KEY, etc.
+    stripe_secret_key: str = ""
+    stripe_publishable_key: str = ""
+    stripe_webhook_secret: str = ""
+    provider_share_pct: float = 70.0  # Host share %
+    platform_fee_pct: float = 30.0  # Platform share %
+    earnings_rate_per_1k: float = 0.002  # USD per 1K tokens
+    min_payout_monthly: float = 10.0  # Min monthly payout USD
+    min_payout_quarterly: float = 25.0  # Min quarterly payout USD
+    default_payout_schedule: str = "monthly"  # monthly or quarterly
+
+    def __post_init__(self) -> None:
+        """Load overrides from environment variables."""
+        self.stripe_secret_key = os.environ.get(
+            "SAWYER_STRIPE_SECRET_KEY", self.stripe_secret_key
+        )
+        self.stripe_publishable_key = os.environ.get(
+            "SAWYER_STRIPE_PUBLISHABLE_KEY", self.stripe_publishable_key
+        )
+        self.stripe_webhook_secret = os.environ.get(
+            "SAWYER_STRIPE_WEBHOOK_SECRET", self.stripe_webhook_secret
+        )
+        if env_val := os.environ.get("SAWYER_PROVIDER_SHARE_PCT"):
+            self.provider_share_pct = float(env_val)
+        if env_val := os.environ.get("SAWYER_PLATFORM_FEE_PCT"):
+            self.platform_fee_pct = float(env_val)
+        if env_val := os.environ.get("SAWYER_EARNINGS_RATE"):
+            self.earnings_rate_per_1k = float(env_val)
+        if env_val := os.environ.get("SAWYER_MIN_PAYOUT_MONTHLY"):
+            self.min_payout_monthly = float(env_val)
+        if env_val := os.environ.get("SAWYER_MIN_PAYOUT_QUARTERLY"):
+            self.min_payout_quarterly = float(env_val)
+        if env_val := os.environ.get("SAWYER_DEFAULT_PAYOUT_SCHEDULE"):
+            self.default_payout_schedule = env_val
+
     def validate(self) -> None:
         """Validate configuration values."""
         if self.inference_port < 1 or self.inference_port > 65535:
@@ -44,3 +81,13 @@ class SawyerConfig:
             raise ValueError(f"max_experts must be >= 1, got {self.max_experts}")
         if self.request_timeout <= 0:
             raise ValueError(f"request_timeout must be > 0, got {self.request_timeout}")
+        if self.provider_share_pct + self.platform_fee_pct != 100.0:
+            raise ValueError(
+                f"provider_share_pct ({self.provider_share_pct}) + "
+                f"platform_fee_pct ({self.platform_fee_pct}) must equal 100"
+            )
+        if self.default_payout_schedule not in ("monthly", "quarterly"):
+            raise ValueError(
+                f"default_payout_schedule must be monthly or quarterly, "
+                f"got {self.default_payout_schedule}"
+            )
