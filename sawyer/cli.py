@@ -72,7 +72,7 @@ def cmd_serve(args) -> int:
             print(f"    {model.num_experts} experts, {model.active_experts} active")
         except ValueError:
             print(f"  Unknown model: {model_name}")
-            print(f"  Available: {', '.join(m['name'] for m in list_models())}")
+            print(f"  Available: {', '.join(m.name for m in list_models())}")
             return 1
 
         # Check cache
@@ -178,21 +178,31 @@ def cmd_status(args) -> int:
 
 def cmd_models(args) -> int:
     """List available models and expert layouts."""
-    models = list_models()
+    use = getattr(args, "use", None)
+    models = list_models(use=use)
+
+    if not models:
+        print(f"No models found for use case: {use}")
+        print("Available use cases: chat, code")
+        return 1
+
     print("Available Models")
     print("=" * 60)
 
     for m in models:
-        print(f"\n  {m['display_name']} ({m['name']})")
-        print(f"    Experts: {m['num_experts']} total, {m['active_experts']} active")
-        print(
-            f"    Parameters: {m['total_params_B']:.1f}B"
-            f" total, {m['active_params_B']:.1f}B active"
-        )
-        print(f"    Q4 memory: {m['model_size_gb_q4']:.1f} GB")
-        print(f"    Min VRAM: {m['min_vram_gb']:.0f} GB")
+        tags = ", ".join(m.tags)
+        print(f"\n  {m.display_name} ({m.name})")
+        print(f"    {m.description}")
+        print(f"    Best for: {tags}")
+        print(f"    Experts: {m.num_experts} total, {m.active_experts} active")
+        print(f"    Parameters: {m.total_params_b:.1f}B total, ~{m.active_params_b:.1f}B active")
+        print(f"    Q4 memory: {m.model_size_gb_q4:.1f} GB (full), ~{m.expert_size_gb_q4:.1f} GB per expert")
+        print(f"    Context: {m.context_length:,} tokens")
+        print(f"    Min VRAM: {m.min_vram_gb:.0f} GB (full), {m.min_vram_per_expert_gb:.0f} GB (one expert)")
 
     print(f"\n  {len(models)} models available")
+    print("\n  Tip: 'sawyer models --use chat' or '--use code' to filter")
+    print("  Tip: 'sawyer extract mixtral-8x7b --experts 0,1' to host specific experts")
     return 0
 
 
@@ -205,7 +215,7 @@ def cmd_download(args) -> int:
         model = get_model(model_name)
     except ValueError:
         print(f"Unknown model: {model_name}")
-        print(f"Available: {', '.join(m['name'] for m in list_models())}")
+        print(f"Available: {', '.join(m.name for m in list_models())}")
         return 1
 
     print(f"Downloading {model.display_name} weights...")
@@ -581,7 +591,13 @@ def main() -> int:
     status_parser.add_argument("--user", default="default", help="User ID for token balance")
 
     # models
-    subparsers.add_parser("models", help="List available models and expert layouts")
+    models_parser = subparsers.add_parser("models", help="List available models and expert layouts")
+    models_parser.add_argument(
+        "--use",
+        choices=["chat", "code"],
+        default=None,
+        help="Filter models by use case",
+    )
 
     # download
     dl_parser = subparsers.add_parser("download", help="Download model weights to local cache")

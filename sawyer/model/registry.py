@@ -1,6 +1,13 @@
-"""Sawyer model registry — supported MoE models and expert layouts."""
+"""Sawyer model registry — supported MoE models and expert layouts.
 
-from dataclasses import dataclass
+Models are tagged by use case so users can find what they need:
+  chat  — conversation, Q&A, general assistance
+  code  — programming, debugging, code generation
+  both  — strong at both chat and code
+"""
+
+
+from dataclasses import dataclass, field
 
 
 @dataclass
@@ -27,7 +34,36 @@ class MoEModel:
     context_length: int  # maximum context window
     gating_type: str  # "top_k", "top_n", "shared"
     hf_repo: str  # HuggingFace repo ID
+    tags: list[str] = field(default_factory=list)  # use-case tags: "chat", "code", "both"
+    description: str = ""  # one-line human-readable description
     experts: list[ExpertLayout] | None = None  # detailed expert layout (if available)
+
+    @property
+    def active_params_b(self) -> float:
+        """Effective parameters per token (only active experts count)."""
+        # Rough estimate: shared params + active expert params
+        shared_fraction = 0.3  # attention and embedding params are shared
+        shared_params = self.total_params_b * shared_fraction
+        expert_params = self.expert_size_gb_q4 * self.active_experts * 2.5  # rough GB->B
+        return shared_params + expert_params
+
+    @property
+    def min_vram_gb(self) -> float:
+        """Minimum VRAM to run the full model (Q4_K_M)."""
+        return self.model_size_gb_q4 + 2.0  # 2GB for KV cache overhead
+
+    @property
+    def min_vram_per_expert_gb(self) -> float:
+        """Minimum VRAM to host one expert shard."""
+        return self.expert_size_gb_q4 + 1.0  # 1GB headroom
+
+    def supports_use(self, use: str) -> bool:
+        """Check if this model is suitable for a use case."""
+        if use in self.tags:
+            return True
+        if "both" in self.tags and use in ("chat", "code"):
+            return True
+        return False
 
 
 # Registry of supported models
@@ -43,6 +79,8 @@ MODELS: dict[str, MoEModel] = {
         context_length=32768,
         gating_type="top_k",
         hf_repo="TheBloke/Mixtral-8x7B-v0.1-GGUF",
+        tags=["both"],
+        description="Best all-rounder. Strong at chat and code. 8 experts, 2 active per token.",
     ),
     "deepseek-v2-lite": MoEModel(
         name="deepseek-v2-lite",
@@ -55,10 +93,12 @@ MODELS: dict[str, MoEModel] = {
         context_length=131072,
         gating_type="shared",
         hf_repo="deepseek-ai/DeepSeek-V2-Lite-Chat-GGUF",
+        tags=["chat", "code"],
+        description="64 tiny experts. Great for distributed serving. 128K context.",
     ),
     "qwen1.5-moe-a2.7b": MoEModel(
         name="qwen1.5-moe-a2.7b",
-        display_name="Qwen1.5-MoE-A2.7B",
+        display_name="Qwen1.5-MoE A2.7B",
         total_params_b=14.3,
         num_experts=60,
         active_experts=4,
@@ -67,10 +107,12 @@ MODELS: dict[str, MoEModel] = {
         context_length=32768,
         gating_type="top_k",
         hf_repo="Qwen/Qwen1.5-MoE-A2.7B-GGUF",
+        tags=["chat"],
+        description="Lightweight chat model. 60 small experts, fits on modest hardware.",
     ),
     "dbrx": MoEModel(
         name="dbrx",
-        display_name="DBRX",
+        display_name="DBRX Instruct",
         total_params_b=132.0,
         num_experts=16,
         active_experts=4,
@@ -79,6 +121,8 @@ MODELS: dict[str, MoEModel] = {
         context_length=32768,
         gating_type="top_k",
         hf_repo="databricks/dbrx-instruct-GGUF",
+        tags=["code"],
+        description="Databricks code specialist. 16 large experts, 4 active. Needs serious hardware.",
     ),
 }
 
@@ -90,12 +134,18 @@ def get_model(name: str) -> MoEModel:
     return MODELS[name]
 
 
-def list_models() -> list[MoEModel]:
-    """Return all supported models."""
-    return list(MODELS.values())
+def list_models(use: str | None = None) -> list[MoEModel]:
+    """Return supported models, optionally filtered by use case.
+
+    Args:
+        use: Filter by use case ('chat', 'code', or None for all)
+    """
+    models = list(MODELS.values())
+    if use:
+        models = [m for m in models if m.supports_use(use)]
+    return models
 
 
 def can_host_expert(model: MoEModel, available_vram_gb: float) -> bool:
     """Check if a node has enough VRAM to host an expert for this model."""
-    # Leave 1GB headroom for KV cache and overhead
-    return available_vram_gb >= model.expert_size_gb_q4 + 1.0
+    return available_vram_gb >= model.min_vram_per_expert_gb
