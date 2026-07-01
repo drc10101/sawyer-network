@@ -202,6 +202,65 @@ def cmd_download(args) -> int:
     return 0
 
 
+def cmd_extract(args) -> int:
+    """Extract per-expert weight shards from a GGUF model.
+
+    Splits a downloaded MoE model into individual expert shards that can
+    be loaded by separate nodes. Each shard contains the FFN weights for
+    one expert across all layers, plus the gating network weights.
+    """
+    from sawyer.expert.extractor import ExpertExtractor
+
+    model_name = args.model
+
+    try:
+        model = get_model(model_name)
+    except ValueError:
+        print(f"Unknown model: {model_name}")
+        print(f"Available: {', '.join(m.name for m in list_models())}")
+        return 1
+
+    # Resolve which experts to extract
+    if args.experts:
+        expert_ids = [int(e) for e in args.experts]
+        max_expert = model.num_experts - 1
+        for eid in expert_ids:
+            if eid < 0 or eid > max_expert:
+                print(f"Invalid expert {eid}: must be 0-{max_expert}")
+                return 1
+    else:
+        expert_ids = None  # Extract all
+
+    print(f"Extracting {model.display_name} expert shards")
+    print(f"  Total experts: {model.num_experts}")
+    print(f"  Per-expert size: ~{model.expert_size_gb_q4:.1f} GB")
+    if expert_ids:
+        print(f"  Extracting: experts {expert_ids}")
+    else:
+        print(f"  Extracting: all {model.num_experts} experts")
+
+    extractor = ExpertExtractor()
+
+    try:
+        paths = extractor.extract_and_save(
+            model_name=model_name,
+            gguf_path=args.gguf,
+            expert_ids=expert_ids,
+            output_dir=args.output,
+        )
+    except FileNotFoundError as e:
+        print(f"  Error: {e}")
+        return 1
+
+    print(f"\n  Extracted {len(paths)} expert shards:")
+    for path in paths:
+        size_mb = path.stat().st_size / (1024 ** 2)
+        print(f"    {path.name}: {size_mb:.1f} MB")
+
+    print("\n  Done! Use 'sawyer serve --expert <id>' to load a specific expert.")
+    return 0
+
+
 def cmd_account(args) -> int:
     """Create or show token account."""
     accountant = TokenAccountant()
@@ -478,6 +537,34 @@ def main() -> int:
     dl_parser.add_argument("--force", action="store_true", help="Re-download even if cached")
     dl_parser.add_argument("--no-verify", action="store_true", help="Skip SHA-256 verification")
 
+    # extract
+    extract_parser = subparsers.add_parser(
+        "extract",
+        help="Extract per-expert weight shards from a MoE model",
+    )
+    extract_parser.add_argument(
+        "model",
+        help="Model to extract experts from (e.g., mixtral-8x7b)",
+    )
+    extract_parser.add_argument(
+        "--experts",
+        nargs="+",
+        type=int,
+        help="Expert IDs to extract (default: all)",
+    )
+    extract_parser.add_argument(
+        "--gguf",
+        type=str,
+        default=None,
+        help="Path to GGUF file (default: use Sawyer cache)",
+    )
+    extract_parser.add_argument(
+        "--output",
+        type=str,
+        default=None,
+        help="Output directory (default: ~/.sawyer/experts/{model}/)",
+    )
+
     # account
     acct_parser = subparsers.add_parser("account", help="Manage token accounts")
     acct_sub = acct_parser.add_subparsers(dest="action", help="Account actions")
@@ -553,6 +640,7 @@ def main() -> int:
         "status": cmd_status,
         "models": cmd_models,
         "download": cmd_download,
+        "extract": cmd_extract,
         "account": cmd_account,
         "quota": cmd_quota,
         "provider": cmd_provider,
