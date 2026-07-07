@@ -5,6 +5,7 @@ Usage:
     sawyer serve          Start serving expert inference requests
     sawyer run            One command: start Sawyer + Ollama + agent
     sawyer chat           Start the consumer chat client (web UI + API)
+    sawyer bench          Benchmark MoE prefill speedup (before/after)
     sawyer status         Show network status and token balance
     sawyer models         List available models and expert layouts
     sawyer download       Download model weights to local cache
@@ -26,6 +27,7 @@ from sawyer.model.registry import get_model, list_models
 from sawyer.node.agent import SawyerNode
 from sawyer.node.weights import WeightLoader
 from sawyer.token.accounting import TokenAccountant
+from sawyer.bench import cmd_bench
 from sawyer.token.budget import TIER_PRICING, SubscriptionTier
 
 
@@ -368,19 +370,22 @@ def cmd_chat(args) -> int:
     config = SawyerConfig()
     inference = LocalInference(config)
 
+    # discover_models() already probes all backends concurrently,
+    # so we derive backend status from discovery results (no redundant is_available call)
+    models = inference.discover_models()
+    available_backends = {m.backend for m in models}
+
     print("  Checking backends...")
-    backends = inference.is_available()
-    for name, available in backends.items():
-        status = "[OK]" if available else "[--]"
+    for name in ["ollama", "llama_cpp", "vllm", "lm_studio"]:
+        status = "[OK]" if name in available_backends else "[--]"
         print(f"    {status} {name}")
 
-    if not any(backends.values()):
+    if not available_backends:
         print()
         print("  No backends detected. Install Ollama: https://ollama.com")
         print("  Then: ollama pull llama3 && sawyer chat")
         print()
 
-    models = inference.discover_models()
     if models:
         print(f"\n  Models available ({len(models)}):")
         for m in models[:5]:
@@ -929,6 +934,55 @@ def main() -> int:
         help="Filter models by use case",
     )
 
+    # bench
+    bench_parser = subparsers.add_parser(
+        "bench",
+        help="Benchmark MoE prefill speedup (before/after optimization comparison)",
+    )
+    bench_parser.add_argument(
+        "-m",
+        "--model",
+        required=True,
+        help="Path to GGUF model file",
+    )
+    bench_parser.add_argument(
+        "--binary",
+        default=None,
+        help="Path to llama-bench binary (default: auto-detect)",
+    )
+    bench_parser.add_argument(
+        "-p",
+        "--prompt-sizes",
+        default="512,1024,2048",
+        help="Comma-separated prompt sizes to benchmark (default: 512,1024,2048)",
+    )
+    bench_parser.add_argument(
+        "-ngl",
+        "--ngl",
+        type=int,
+        default=99,
+        help="Number of GPU layers to offload (default: 99, use 0 for CPU-only)",
+    )
+    bench_parser.add_argument(
+        "-t",
+        "--threads",
+        type=int,
+        default=-1,
+        help="Number of CPU threads (default: auto)",
+    )
+    bench_parser.add_argument(
+        "-r",
+        "--repetitions",
+        type=int,
+        default=3,
+        help="Number of repetitions per test (default: 3)",
+    )
+    bench_parser.add_argument(
+        "--json",
+        default=None,
+        help="Save results as JSON to this path",
+    )
+
     # download
     dl_parser = subparsers.add_parser("download", help="Download model weights to local cache")
     dl_parser.add_argument("model", help="Model to download (e.g., mixtral-8x7b)")
@@ -1033,6 +1087,7 @@ def main() -> int:
         "serve": cmd_serve,
         "run": cmd_run,
         "chat": cmd_chat,
+        "bench": cmd_bench,
         "status": cmd_status,
         "models": cmd_models,
         "download": cmd_download,
