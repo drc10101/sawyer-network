@@ -292,6 +292,50 @@
       .host-grid { grid-template-columns: 1fr 1fr 1fr 1fr; }
     }
 
+    /* ── FAQ ── */
+    .faq-section { padding: 80px 0; background: var(--bg-alt); }
+    .faq-list { max-width: 720px; }
+    .faq-item {
+      border-bottom: 1px solid var(--border);
+    }
+    .faq-item:first-child {
+      border-top: 1px solid var(--border);
+    }
+    .faq-question {
+      width: 100%; background: none; border: none;
+      padding: 20px 0; display: flex; align-items: center;
+      justify-content: space-between; cursor: pointer;
+      font-family: var(--font); font-size: 16px; font-weight: 600;
+      color: var(--text); text-align: left; line-height: 1.4;
+      transition: color 0.15s;
+    }
+    .faq-question:hover { color: var(--accent); }
+    .faq-question .chevron {
+      flex-shrink: 0; width: 20px; height: 20px;
+      transition: transform 0.25s ease; margin-left: 16px;
+      color: var(--text-tertiary);
+    }
+    .faq-item.open .faq-question .chevron {
+      transform: rotate(180deg);
+      color: var(--accent);
+    }
+    .faq-answer {
+      max-height: 0; overflow: hidden;
+      transition: max-height 0.3s ease, padding 0.3s ease;
+    }
+    .faq-item.open .faq-answer {
+      max-height: 500px;
+    }
+    .faq-answer-inner {
+      padding-bottom: 20px;
+      font-size: 15px; color: var(--text-secondary); line-height: 1.7;
+    }
+    .faq-answer-inner code {
+      font-family: var(--mono); font-size: 13px;
+      background: var(--accent-light); color: var(--accent);
+      padding: 2px 6px; border-radius: 4px;
+    }
+
     /* ── Models ── */
     .models-section { padding: 80px 0; }
     .models-table {
@@ -378,6 +422,7 @@
         <a href="#pricing">Pricing</a>
         <a href="#hosting">Host a Node</a>
         <a href="#models">Models</a>
+        <a href="#faq">FAQ</a>
         <a href="https://github.com/drc10101/sawyer" target="_blank">GitHub</a>
       </nav>
       <div class="header-actions">
@@ -608,6 +653,137 @@
     </div>
   </section>
 
+  <section class="faq-section" id="faq">
+    <div class="container">
+      <div class="section-label">FAQ</div>
+      <div class="section-title">Frequently asked questions</div>
+      <div class="section-desc">Technical details, honest answers. If it's not covered here, ask us on GitHub.</div>
+      <div class="faq-list">
+
+        <div class="faq-item">
+          <button class="faq-question">
+            <span>What is Sawyer and how does it work?</span>
+            <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">Sawyer is a distributed inference network for Mixture-of-Experts (MoE) language models. Instead of running an entire model on one GPU, Sawyer splits the model's expert weights across many volunteer nodes. When you send a prompt, the router identifies which 2–6 experts are needed for that token, dispatches only those forward passes to the nodes holding the relevant weights, and aggregates the results. This avoids tensor parallelism entirely — each expert runs independently on whatever GPU it lives on.</div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question">
+            <span>How is this different from other inference APIs?</span>
+            <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">Traditional APIs (OpenAI, Anthropic, Together) run the full model on their own GPU clusters and charge per token with no hosting option. Sawyer distributes the compute across a peer network of consumer GPUs, which is why we can offer a 14-day free trial and lower pricing. You can also host your own GPU and earn 70% of the inference revenue — no other major API lets you do that. The trade-off is that we currently support MoE models only, since their expert structure makes distributed inference practical.</div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question">
+            <span>What models do you support?</span>
+            <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">We currently support Mixtral 8x7B (46.7B params, 8 experts), DeepSeek-V2 Lite (15.7B params, 64 shared experts), and Qwen2.5 7B MoE (14.3B params, 60 experts). All models run in Q4_K_M quantization. We're evaluating additional MoE architectures — if a model has a clear expert decomposition, it's a candidate for the network. Non-MoE dense models don't distribute well across consumer GPUs, so we don't support those.</div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question">
+            <span>How does hosting work? Do I need to be technical?</span>
+            <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">Two commands: <code>sawyer register</code> creates your host identity and links your Stripe account for payouts. <code>sawyer serve --gpu</code> downloads the assigned expert weights and starts serving inference requests. The CLI handles health monitoring, weight updates, and routing registration automatically. You need an NVIDIA GPU with CUDA drivers and enough VRAM to hold your assigned experts (1.5–3 GB per expert). No Kubernetes, no Docker, no manual configuration.</div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question">
+            <span>How much can I earn as a host?</span>
+            <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">You earn 70% of every token billed for inference your node serves. Earnings depend on your GPU's throughput and network demand — an RTX 3090 serving two Mixtral experts can realistically process hundreds of thousands of tokens per day. Payouts happen monthly via Stripe Connect once you hit the $10 minimum threshold. Quarterly payouts are available at a $25 threshold. Stripe handles 1099-K tax reporting automatically; you don't need to invoice us.</div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question">
+            <span>Is my data safe? What about privacy?</span>
+            <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">All traffic between the router and expert nodes uses CA-signed TLS certificates — no self-signed certs, no plaintext. Host nodes never see complete prompts; they receive only the embedding slices relevant to their assigned expert, making it computationally infeasible to reconstruct user input. Bedrock identity tokens audit-log every inference request for accountability. We don't store prompt content after delivery, and host nodes don't log token data.</div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question">
+            <span>What happens when a node goes down?</span>
+            <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">The router tracks node health via heartbeat signals. When a node misses its heartbeat window, the router removes it from the active pool and redirects requests to redundant copies of the same expert running on other nodes. Smart routing weights its scoring 60% toward load balance and 40% toward latency, so there's always capacity headroom across the network. If no redundant expert is available, the request is queued until a healthy node picks it up — it doesn't fail silently.</div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question">
+            <span>How does the 14-day free trial work?</span>
+            <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">You get 14 days of unlimited token usage across all supported models, no credit card required. After the trial ends, you choose Pro ($15/mo for 1M tokens) or Business ($99/mo for 10M tokens). Unused tokens on paid plans roll over for one month. If you decide not to continue, your account simply stops working — no charges, no cancellation needed.</div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question">
+            <span>Can I use Sawyer with my existing code?</span>
+            <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">Yes. Sawyer exposes an OpenAI-compatible API endpoint, so any code that works with <code>openai</code> (Python, JS, LangChain, LlamaIndex, etc.) works with Sawyer by changing the base URL and API key. That includes streaming, function calling, and structured output where the underlying model supports them. No SDK lock-in — if it speaks the OpenAI chat completions format, it works here.</div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question">
+            <span>What hardware do I need to host?</span>
+            <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">Any NVIDIA GPU with at least 6 GB VRAM and CUDA 12+ drivers can host. A single Mixtral expert in Q4_K_M quantization is ~1.5 GB, so an RTX 3060 (12 GB) can hold two experts comfortably, and an RTX 3090 (24 GB) can hold four to six. You also need stable internet (5 Mbps+ upload) and enough disk space for the expert weight files. No specific CPU or RAM requirements — inference is GPU-bound.</div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question">
+            <span>How does Bedrock identity work with Sawyer?</span>
+            <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">Bedrock provides the cryptographic identity layer for every node on the network. When you run <code>sawyer register</code>, your node generates a keypair and receives a Bedrock-signed identity certificate. This certificate is used to authenticate every inference request your node serves and to verify that responses actually came from your node. Consent tokens — also managed through Bedrock — let you specify which models your node will serve, so you have explicit control over what runs on your hardware.</div>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question">
+            <span>What quantization do you use and why?</span>
+            <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">We use Q4_K_M quantization (4-bit with K-quants medium mix), which reduces model size by roughly 75% with minimal quality loss — typically under 1% degradation on standard benchmarks compared to FP16. This is what makes distribution practical: a Mixtral-8x7B expert drops from ~6 GB in FP16 to ~1.5 GB in Q4_K_M, fitting comfortably on consumer GPUs. The "medium" mix preserves important weight groups at higher precision, which is why Q4_K_M outperforms naive 4-bit rounding on perplexity and generation quality.</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
   <section class="models-section" id="models">
     <div class="container">
       <div class="section-label">Supported Models</div>
@@ -722,6 +898,22 @@
       document.documentElement.setAttribute('data-theme', 'dark');
       document.getElementById('theme-icon').innerHTML = '&#9788;';
     }
+
+    // FAQ accordion
+    document.querySelectorAll('.faq-question').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var item = this.closest('.faq-item');
+        var wasOpen = item.classList.contains('open');
+        // Close all items
+        document.querySelectorAll('.faq-item').forEach(function(el) {
+          el.classList.remove('open');
+        });
+        // Toggle clicked item
+        if (!wasOpen) {
+          item.classList.add('open');
+        }
+      });
+    });
   </script>
 </body>
 </html>
