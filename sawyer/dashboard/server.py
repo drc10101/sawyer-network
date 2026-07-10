@@ -534,46 +534,45 @@ async def chat_completions(
             "Upgrade your plan at https://sawyer.infill.systems/#pricing",
         )
 
-    # Build the prompt from messages
-    prompt_parts = []
-    for msg in request.messages:
-        if msg.role == "system":
-            prompt_parts.append(f"System: {msg.content}")
-        elif msg.role == "user":
-            prompt_parts.append(f"User: {msg.content}")
-        elif msg.role == "assistant":
-            prompt_parts.append(f"Assistant: {msg.content}")
-    prompt = "\n".join(prompt_parts)
-
     # Route through the Sawyer inference pipeline
     # In production, this dispatches to expert nodes via gRPC.
-    # For early access, it proxies to a local llama.cpp server.
-    try:
-        from sawyer.router.pipeline import InferencePipeline
+    # For early access, it proxies to a backend via SAWYER_BACKEND_URL.
+    import os
 
-        pipeline = InferencePipeline()
-        result = pipeline.run_inference(
+    backend_url = os.environ.get("SAWYER_BACKEND_URL", "")
+
+    if backend_url:
+        # Use the OpenAI-compatible backend proxy
+        from sawyer.router.backend import BackendConfig, InferenceBackend
+
+        config = BackendConfig(
+            url=backend_url,
+            api_key=os.environ.get("SAWYER_BACKEND_API_KEY", ""),
+        )
+        backend = InferenceBackend(config)
+
+        # Build messages in OpenAI format
+        messages = [{"role": msg.role, "content": msg.content} for msg in request.messages]
+
+        result = await backend.complete(
             model=request.model,
-            prompt=prompt,
+            messages=messages,
             max_tokens=request.max_tokens,
             temperature=request.temperature,
-            user_id=api_key.user_id,
-            api_key_id=api_key.key_id,
         )
 
-        # Deduct tokens from the user's budget
-        tokens_used = result.get("total_tokens", 0)
+        tokens_used = result["total_tokens"]
         storage.deduct_tokens(api_key.user_id, tokens_used)
 
         # Log the inference
         storage.log_inference(
             user_id=api_key.user_id,
             model=request.model,
-            input_tokens=result.get("prompt_tokens", 0),
-            output_tokens=result.get("completion_tokens", 0),
+            input_tokens=result["prompt_tokens"],
+            output_tokens=result["completion_tokens"],
             total_tokens=tokens_used,
-            latency_ms=result.get("latency_ms", 0),
-            node_id=result.get("node_id", "local"),
+            latency_ms=result["latency_ms"],
+            node_id=result.get("node_id", "backend"),
         )
 
         response_id = f"chatcmpl-{uuid.uuid4().hex[:12]}"
@@ -583,37 +582,31 @@ async def chat_completions(
             "id": response_id,
             "object": "chat.completion",
             "created": created,
-            "model": request.model,
+            "model": result.get("model", request.model),
             "choices": [
                 {
                     "index": 0,
                     "message": {
                         "role": "assistant",
-                        "content": result.get("text", ""),
+                        "content": result["text"],
                     },
-                    "finish_reason": "stop" if tokens_used < request.max_tokens else "length",
+                    "finish_reason": result.get("finish_reason", "stop"),
                 }
             ],
             "usage": {
-                "prompt_tokens": result.get("prompt_tokens", 0),
-                "completion_tokens": result.get("completion_tokens", 0),
+                "prompt_tokens": result["prompt_tokens"],
+                "completion_tokens": result["completion_tokens"],
                 "total_tokens": tokens_used,
             },
         }
 
-    except ImportError:
-        # Inference pipeline not available — return a clear error
+    else:
+        # No backend configured — return a clear error
         raise HTTPException(
             status_code=503,
-            detail="Inference backend not available. The Sawyer cluster is starting up. "
-            "Please try again in a few minutes.",
-        ) from None
-    except Exception as e:
-        logger.error("Inference error for user %s: %s", api_key.user_id, e)
-        raise HTTPException(
-            status_code=500,
-            detail=f"Inference error: {e}",
-        ) from None
+            detail="Inference backend not configured. "
+            "Set SAWYER_BACKEND_URL to point to an OpenAI-compatible server.",
+        )
 
 
 def serve(host: str = "0.0.0.0", port: int = 8080) -> None:

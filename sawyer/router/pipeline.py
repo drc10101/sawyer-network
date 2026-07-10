@@ -386,16 +386,52 @@ class InferencePipeline:
         request: InferenceRequest,
         experts: list[int],
     ) -> InferenceResult | None:
-        """Try to run inference via a local ExpertServer.
+        """Try to run inference via a local ExpertServer or backend proxy.
 
-        This is a best-effort local inference path. In distributed mode,
-        this would be replaced by gRPC calls to remote nodes.
+        In distributed mode, this would be replaced by gRPC calls to remote nodes.
+        In local mode, it proxies to an OpenAI-compatible backend if configured.
 
         Returns None if no local backend is available.
         """
-        # In local mode without a real model loaded, return None
-        # The pipeline caller can check for this and use a fallback
-        return None
+        import os
+
+        backend_url = os.environ.get("SAWYER_BACKEND_URL", "")
+        if not backend_url:
+            return None
+
+        try:
+            from sawyer.router.backend import BackendConfig, InferenceBackend
+
+            config = BackendConfig(
+                url=backend_url,
+                api_key=os.environ.get("SAWYER_BACKEND_API_KEY", ""),
+            )
+            backend = InferenceBackend(config)
+
+            # Build messages in OpenAI format
+            messages = []
+            if request.prompt:
+                messages.append({"role": "user", "content": request.prompt})
+
+            result = await backend.complete(
+                model=request.model_name,
+                messages=messages,
+                max_tokens=request.max_tokens,
+                temperature=request.temperature,
+            )
+
+            return InferenceResult(
+                text=result["text"],
+                prompt_tokens=result["prompt_tokens"],
+                completion_tokens=result["completion_tokens"],
+                total_tokens=result["total_tokens"],
+                latency_ms=result["latency_ms"],
+                model_name=result.get("model", request.model_name),
+                node_id=result.get("node_id", "backend"),
+            )
+        except Exception as e:
+            logger.error("Backend inference failed: %s", e)
+            return None
 
     def get_status(self) -> dict[str, Any]:
         """Get the current pipeline status."""
