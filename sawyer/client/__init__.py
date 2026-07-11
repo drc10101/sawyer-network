@@ -2288,14 +2288,19 @@ if (geminiKey) {
 
 def create_client_app(config: SawyerConfig | None = None) -> FastAPI:
     """Create the FastAPI app for the consumer client."""
+    from sawyer.auth.middleware import add_cors_middleware, validate_chat_request, verify_api_key
+
     config = config or SawyerConfig()
     local_inference = LocalInference(config)
 
     app = FastAPI(
         title="Sawyer Client",
         description="Distributed MoE inference — cheaper than your provider",
-        version="0.4.0",
+        version="0.5.0",
     )
+
+    # CORS middleware for chat UI
+    add_cors_middleware(app)
 
     @app.get("/", response_class=HTMLResponse)
     async def chat_ui():
@@ -2328,7 +2333,7 @@ def create_client_app(config: SawyerConfig | None = None) -> FastAPI:
         return {"object": "list", "data": models}
 
     @app.post("/v1/chat/completions")
-    async def chat_completions(request: Request):
+    async def chat_completions(request: Request, auth=Depends(verify_api_key)):
         """OpenAI-compatible chat completions endpoint.
 
         This is the main entry point for inference. It tries:
@@ -2336,10 +2341,15 @@ def create_client_app(config: SawyerConfig | None = None) -> FastAPI:
         2. Local fallback (llama.cpp, Ollama, LM Studio, vLLM) if not
 
         Supports both streaming and non-streaming responses.
+        Requires API key via Authorization: Bearer <key> or X-API-Key header.
         """
         import asyncio
 
         body = await request.json()
+
+        # Input validation
+        validate_chat_request(body)
+
         messages = body.get("messages", [])
         model = body.get("model", "sawyer")
         max_tokens = body.get("max_tokens", 512)
