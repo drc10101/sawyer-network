@@ -1,111 +1,142 @@
 <div align="center"><img src="Sawyer_Agent_Github_Readme_Logo.png" alt="Sawyer Agent on Bedrock" width="800"></div>
 
-# Sawyer — Distributed MoE Inference Network
+# Sawyer Agent
 
 [![PyPI](https://img.shields.io/pypi/v/sawyer-core?color=%2312c7ef&label=pypi%3A%20sawyer-core)](https://pypi.org/project/sawyer-core/)
 
 > **Status: Active prototype** — Provider onboarding and APIs are evolving. Sawyer is under active development toward an alpha milestone.
 
-**"The load is split. Friends help."**
+**The load is split. Friends help.**
 
-Named for Tom Sawyer, who turned an impossible chore into a community effort by making participation irresistible. Sawyer turns GPU inference — a credit-draining trap — into a distributed network where each node carries a piece of the load, and everyone benefits.
-
-**Sawyer does not require providers to host full models.** Providers host isolated MoE expert workloads that the router activates only when needed. That is why Sawyer is not just another distributed inference project — it distributes only the sparse, independently activated sub-networks that MoE architectures make possible.
-
-Built on [Bedrock](https://github.com/drc10101/bedrock) for node identity, consent-gated routing, and auditability. Sawyer runs on Bedrock. Sawyer does not own Bedrock.
+Named for Tom Sawyer, who turned an impossible chore into a community effort by making participation irresistible. Sawyer Agent is your local AI that connects to a distributed MoE inference network. Run it on a laptop, a gaming rig, or a server farm. Use the agent. Join the network. Or both.
 
 ---
 
-## Use Cases
+## Get Started
 
-### For the Developer with a Laptop
+**One command:**
 
-You're building an app that calls LLM APIs. GPT-4 costs $0.03/1K tokens. Claude Haiku is cheaper but still adds up. Sawyer gives you a 14-day free trial with unlimited tokens — roughly $0.0075/1K tokens at Pro — with chat and code models available from day one.
-
-**bash / Git Bash:**
 ```bash
 pip install sawyer-core
-sawyer run                       # One command, everything starts
-sawyer run glm-5.1:cloud         # Pick a model
+sawyer run
 ```
 
-**PowerShell:**
 ```powershell
 pip install sawyer-core
-sawyer run                       # One command, everything starts
-sawyer run glm-5.1:cloud         # Pick a model
+sawyer run
 ```
 
-No GPU required. Your laptop connects to the network and inference happens on nodes that have the hardware. You just type.
+That's it. `sawyer run` detects your setup, picks a model, starts the router, opens the chat UI, and launches the agent. No GPU required on your end — inference happens on the network.
 
-### For the Gamer with a 4090
+Pick a model, skip the agent, or choose what to run:
 
-Your gaming rig sits idle most of the day. Sawyer puts those GPUs to work. You host expert weights and serve inference to the network. The more you contribute, the more you earn -- your 4090 on Tier 4 earns 4x what a laptop on Tier 1 earns per token.
-
-**bash / Git Bash:**
 ```bash
-pip install sawyer-core
-sawyer serve                   # Host experts, start earning
+sawyer run glm-5.1:cloud          # Specific model
+sawyer run --no-agent             # Router only, no agent
+sawyer run --no-browser           # Don't open browser
+sawyer run --agent cursor         # Use Cursor instead of Hermes
+```
+
+**One-click install (Windows):**
+
+```powershell
+irm https://sawyer.infill.systems/install.ps1 | iex
+```
+
+**Install from source:**
+
+```bash
+git clone https://github.com/drc10101/sawyer-network.git
+cd sawyer-network
+pip install -e ".[dev]"
+```
+
+**GPU inference (hosting expert nodes):**
+
+```bash
+pip install sawyer-core[inference]       # bash
+pip install "sawyer-core[inference]"     # PowerShell
+```
+
+Note: `vllm` and `llama-cpp-python` require CUDA and a C++ compiler. If installation fails, install them separately following their docs, then install sawyer-core without extras.
+
+---
+
+## Commands
+
+| Command | What it does |
+|---------|-------------|
+| `sawyer run` | Start everything — router, model, agent |
+| `sawyer chat` | Web UI + OpenAI-compatible API |
+| `sawyer serve` | Host GPU experts, earn tokens |
+| `sawyer models` | List available models |
+| `sawyer status` | Check node status and token balance |
+| `sawyer register` | Register this machine as a network node |
+| `sawyer download` | Cache model weights locally |
+| `sawyer bench` | Benchmark MoE prefill speedup |
+| `sawyer account create` | Create a token account |
+| `sawyer provider register` | Register as a node provider |
+| `sawyer provider onboarding <id>` | Start Stripe Connect for payouts |
+
+Run `sawyer --help` for the full list.
+
+---
+
+## Use the Agent
+
+### Chat
+
+```bash
+sawyer chat                        # Web UI at http://localhost:8000
+sawyer chat --ollama-bridge        # Also serve local Ollama to the network
+```
+
+### Connect Any Agent
+
+Sawyer exposes an OpenAI-compatible `/v1/chat/completions` endpoint. Any framework that supports custom base URLs works out of the box.
+
+**Hermes:**
+```bash
+hermes config set model.base_url http://localhost:8000/v1
+hermes config set model.provider openai_compatible
+hermes config set model.default glm-5.1:cloud
+```
+
+**Claude Code:**
+```bash
+OPENAI_API_KEY=sawyer OPENAI_BASE_URL=http://localhost:8000/v1 claude
+```
+
+**Python:**
+```python
+from openai import OpenAI
+
+client = OpenAI(api_key="sawyer", base_url="http://localhost:8000/v1")
+response = client.chat.completions.create(
+    model="glm-5.1:cloud",
+    messages=[{"role": "user", "content": "Hello"}],
+)
+```
+
+**Supported frameworks:** Hermes, OpenClaw, Claude Code, Cursor, Continue, Aider, Cline, LangChain, LlamaIndex, CrewAI, AutoGPT, and any OpenAI-compatible client.
+
+Full integration guides: [`docs/agent-integration.md`](docs/agent-integration.md)
+
+---
+
+## Join the Network
+
+Your GPU sits idle most of the day. Sawyer puts it to work. Host expert weights, serve inference, earn money. A 4090 on Tier 4 earns 4x what a laptop on Tier 1 earns per token.
+
+```bash
+sawyer serve                   # Start hosting, begin earning
 sawyer serve --model mixtral   # Pick a model to serve
 sawyer status                  # Check your earnings
 ```
 
-**PowerShell:**
-```powershell
-pip install sawyer-core
-sawyer serve                   # Host experts, start earning
-sawyer serve --model mixtral   # Pick a model to serve
-sawyer status                  # Check your earnings
-```
-
-Tier 4 (24GB+ VRAM) can host any model's experts. Tier 1 (4GB) can still participate with Qwen1.5-MoE experts. Everyone earns.
-
-### For the Small Team
-
-Your startup needs inference but can't justify GPU costs. Subscribe at the Enterprise tier ($200/mo, 10M tokens) and route all your calls through Sawyer. Your inference cost drops by 3-6x compared to major API providers. No rate limits, no surprise bills.
-
-### For the Hobbyist
-
-You want to experiment with local models but only have one GPU. Sawyer lets you download experts, serve them locally or to the network, and use the chat client to interact. 14-day free trial, then Pro for $15/mo.
-
----
-
-## How You Earn
-
-Sawyer is not volunteer computing. You get paid for the compute you contribute.
-
-### The Pool
-
-Every quarter, 70% of all subscription revenue goes into the provider pool:
-
-```
-Provider Pool = Total Subscribers x Avg Subscription x 70%
-```
-
-With 100 Pro subscribers ($15/mo):
-- Revenue: $1,500/month ($4,500/quarter)
-- Provider pool: $3,150/quarter
-- Platform: $1,350/quarter
-
-With 1,000 subscribers:
-- Revenue: $15,000/month ($45,000/quarter)
-- Provider pool: $31,500/quarter
-- Platform: $13,500/quarter
-
-The pool grows as the network grows. More subscribers means more money for everyone.
-
-### Distribution
-
-The pool is split two ways:
-
-| Share | What | Why |
-|-------|------|-----|
-| 90% | Throughput | Tokens served x tier multiplier — the work you do |
-| 10% | Uptime | Just being available matters, even if traffic is low |
+When serving, Sawyer hosts a real-time dashboard at `http://localhost:8000/` — tokens served, earnings, uptime, model breakdown, tier badge, payout info. API at `/api/stats`.
 
 ### Hardware Tiers
-
-Your earnings depend on what you bring to the network. A 4090 earns more per token than a 1060 because it can host larger, more valuable experts.
 
 | Tier | VRAM | Multiplier | Can Host | Monthly Estimate* |
 |------|------|-----------|----------|-------------------|
@@ -116,31 +147,38 @@ Your earnings depend on what you bring to the network. A 4090 earns more per tok
 
 *Estimates based on 100 Pro subscribers at $15/mo, varies with network size and utilization.
 
-**Same 100K tokens served:**
+Same 100K tokens served:
 - Tier 1 laptop: 100K x 1x = 100K weighted
 - Tier 4 monster: 100K x 4x = 400K weighted
 
 The monster PC earns 4x for the same token count because it invested in hardware that can do more for the network.
 
-### Example: The Kid with the Monster PC
+### How You Get Paid
 
-100 subscribers, one quarter:
+Every quarter, 70% of all subscription revenue goes into the provider pool:
 
-| Provider | Tokens | Uptime | Tier | Weighted | Token Earnings | Uptime Earnings | Total |
-|----------|--------|--------|------|----------|---------------|----------------|-------|
-| Monster PC (4090) | 500K | 720h | Tier 4 (4x) | 2,000,000 | $2,678 | $105 | **$2,783** |
-| Gaming rig (3060) | 200K | 500h | Tier 3 (3x) | 600,000 | $803 | $72 | **$875** |
-| Midrange (1060) | 50K | 300h | Tier 1 (1x) | 50,000 | $67 | $44 | **$111** |
+```
+Provider Pool = Total Subscribers x Avg Subscription x 70%
+```
 
-The kid with the 4090 doing most of the work gets the biggest slice. That's the point.
+The pool is split:
+- **90%** by throughput (tokens served x tier multiplier)
+- **10%** by uptime (just being available matters)
 
-### Payouts
+Payouts quarterly via Stripe Connect. Minimum $10, below that rolls over. Nobody loses money.
 
-- Quarterly: January-March, April-June, July-September, October-December
-- Minimum payout: $10. Below that, your earnings roll over to next quarter
-- Methods: Stripe Connect (primary), PayPal
-- Failed payouts roll over — nobody loses money
-- **Providers must complete Stripe Connect onboarding to receive payouts.** Earnings accumulate but cannot be disbursed until Stripe onboarding is complete. Run `sawyer provider onboarding <id>` to get started.
+---
+
+## Supported Models
+
+| Model | Params | Experts | Active/Token | Q4 Size | Expert Size | Best For |
+|-------|--------|---------|-------------|---------|-------------|----------|
+| Mixtral 8x7B | 46.7B | 8 | 2 | ~24 GB | ~1.5 GB | Chat, Code |
+| DeepSeek-V2 Lite | 15.7B | 64 | 6 | ~9 GB | ~0.8 GB | Chat |
+| Qwen1.5-MoE | 14.3B | 60 | 4 | ~7 GB | ~0.5 GB | Chat (lightweight) |
+| DBRX Instruct | 132B | 16 | 4 | ~65 GB | ~2.5 GB | Code |
+
+Use `sawyer models` to list all, or filter: `sawyer models --use chat`, `sawyer models --use code`.
 
 ---
 
@@ -156,33 +194,6 @@ The kid with the 4090 doing most of the work gets the biggest slice. That's the 
 14-day free trial with unlimited tokens. Then pick your plan. 70% of subscription revenue goes to the hosts who serve inference — real money attracts real hardware.
 
 ~3-6x cheaper than GPT-4. No rate limits. No surprise bills. Token budget resets monthly, unused tokens roll over (max 1 month).
-
----
-
-## Supported Models
-
-Use `sawyer models` to list available models, or filter by use case:
-
-**bash / Git Bash:**
-```bash
-sawyer models              # All models
-sawyer models --use chat   # Chat-focused models
-sawyer models --use code   # Code-focused models
-```
-
-**PowerShell:**
-```powershell
-sawyer models              # All models
-sawyer models --use chat   # Chat-focused models
-sawyer models --use code   # Code-focused models
-```
-
-| Model | Params | Experts | Active/Token | Q4 Size | Expert Size | Best For |
-|-------|--------|---------|-------------|---------|-------------|----------|
-| Mixtral 8x7B | 46.7B | 8 | 2 | ~24 GB | ~1.5 GB | Chat, Code |
-| DeepSeek-V2 Lite | 15.7B | 64 | 6 | ~9 GB | ~0.8 GB | Chat |
-| Qwen1.5-MoE | 14.3B | 60 | 4 | ~7 GB | ~0.5 GB | Chat (lightweight) |
-| DBRX Instruct | 132B | 16 | 4 | ~65 GB | ~2.5 GB | Code |
 
 ---
 
@@ -203,54 +214,20 @@ sawyer models --use code   # Code-focused models
 [Aggregated Output] --> User
 ```
 
-Every node earns proportional to its hardware contribution. The 4090 in Dallas earns 4x per token because it can host the experts the network needs most.
+Sawyer does not require providers to host full models. Providers host isolated MoE expert workloads that the router activates only when needed. That is why Sawyer is not just another distributed inference project — it distributes only the sparse, independently activated sub-networks that MoE architectures make possible.
 
----
+Built on [Bedrock](https://github.com/drc10101/bedrock) for node identity, consent-gated routing, and auditability. Sawyer runs on Bedrock. Sawyer does not own Bedrock.
 
-## Core Modules
+### Core Modules
 
-### 1. `sawyer/router/` — Expert Router
-- Receives token embeddings from the user's local dense layers
-- Routes to the correct expert(s) based on the model's gating network
-- Aggregates expert outputs, returns to user
-- Tracks latency per node, falls back to redundant experts on timeout
+- **`sawyer/router/`** — Expert Router: receives embeddings, routes to correct experts, aggregates output, tracks latency, falls back on timeout
+- **`sawyer/node/`** — Node Agent: registers via Bedrock identity, advertises GPU/VRAM/bandwidth, hosts expert weights, serves inference via gRPC/QUIC
+- **`sawyer/token/`** — Token Economics: trial, budgets, debit per inference, monthly reset, 70% provider pool
+- **`sawyer/provider/`** — Provider Economics & Dashboard: tier multipliers, quarterly payouts, real-time web dashboard
+- **`sawyer/identity/`** — Bedrock Integration: cryptographic identity, consent tokens, audit chain
+- **`sawyer/model/`** — Model Registry: supported MoE models, versioned expert weights, on-demand download
 
-### 2. `sawyer/node/` — Node Agent
-- Registers with the network via Bedrock node identity
-- Advertises capabilities: GPU model, VRAM, bandwidth, latency
-- Hosts one or more expert weight files
-- Serves inference requests via encrypted gRPC/QUIC
-- Reports health and throughput to the router
-
-### 3. `sawyer/token/` — Token Economics
-- 14-day free trial with unlimited tokens, no credit card
-- Pro tier at $15/mo gives 2M tokens, Enterprise at $200/mo gives 10M
-- Tokens debit per inference request (input + output tokens)
-- Token budget resets monthly, rolls over unused tokens (max 1 month)
-- Provider pool = 70% of all subscription revenue distributed quarterly
-
-### 4. `sawyer/provider/` — Provider Economics & Dashboard
-- **Node Tiers**: 4 hardware tiers (4GB/8GB/12GB/24GB+) with 1x-4x earnings multipliers
-- **Revenue Pool**: 70% of subscription revenue distributed to providers quarterly
-- **Quarterly Payout**: Pool split by weighted contribution, $25 minimum, Stripe/PayPal
-- **Rollover**: Below-threshold earnings carry forward — nobody loses money
-- **Dashboard**: Real-time web UI at `http://localhost:8000/` when serving — see tokens served, earnings, uptime, model breakdown, daily/weekly stats
-
-### 5. `sawyer/identity/` — Bedrock Integration
-- Every node holds a Bedrock cryptographic identity
-- Router verifies node certificates before routing
-- Consent tokens gate which models a node will serve
-- Audit chain logs every inference request for compliance
-
-### 6. `sawyer/model/` — Model Registry
-- Catalog of supported MoE models tagged by use case (chat, code)
-- Expert weight files versioned and checksummed
-- Nodes download experts on registration or on-demand
-- Supports Mixtral 8x7B, DeepSeek-V2, Qwen MoE, DBRX
-
----
-
-## Protocol
+### Protocol
 
 ```
 1. Node registers with Sawyer network
@@ -274,245 +251,6 @@ Every node earns proportional to its hardware contribution. The 4090 in Dallas e
    --> Payouts >= $25 via Stripe Connect
    --> Below $25 rolls over to next quarter
 ```
-
----
-
-## Installation
-
-**Requires Python 3.11 or later.**
-
-**bash / Git Bash:**
-```bash
-pip install sawyer-core
-```
-
-**PowerShell:**
-```powershell
-pip install sawyer-core
-```
-
-For GPU inference (hosting expert nodes):
-
-**bash / Git Bash:**
-```bash
-pip install sawyer-core[inference]
-```
-
-**PowerShell:**
-```powershell
-pip install "sawyer-core[inference]"
-```
-
-Note: `vllm` and `llama-cpp-python` require CUDA and a C++ compiler. If installation fails, install them separately following their docs, then install sawyer-core without extras.
-
-Or install from source for development:
-
-**bash / Git Bash:**
-```bash
-git clone https://github.com/drc10101/sawyer-network.git
-cd sawyer-network
-pip install -e ".[dev]"
-```
-
-**PowerShell:**
-```powershell
-git clone https://github.com/drc10101/sawyer-network.git
-cd sawyer-network
-pip install -e ".[dev]"
-```
-
-### Running
-
-After install, Sawyer can be run either way:
-
-**bash / Git Bash:**
-```bash
-sawyer serve                # if Python Scripts is on PATH
-python -m sawyer serve      # works everywhere, no PATH needed
-```
-
-**PowerShell:**
-```powershell
-sawyer serve                # if Python Scripts is on PATH
-python -m sawyer serve      # works everywhere, no PATH needed
-```
-
-### One Command to Start Everything
-
-`sawyer run` starts Ollama (if needed), the Sawyer router, and your agent -- one command, entire workflow:
-
-**bash / Git Bash:**
-```bash
-sawyer run                        # Auto-detect best model, start everything
-sawyer run glm-5.1:cloud          # Use a specific model
-sawyer run --no-agent             # Start Sawyer only, don't launch agent
-sawyer run --no-browser           # Don't open browser
-sawyer run --agent cursor         # Launch Cursor instead of Hermes
-```
-
-**PowerShell:**
-```powershell
-sawyer run                        # Auto-detect best model, start everything
-sawyer run glm-5.1:cloud          # Use a specific model
-sawyer run --no-agent             # Start Sawyer only, don't launch agent
-sawyer run --no-browser           # Don't open browser
-sawyer run --agent cursor         # Launch Cursor instead of Hermes
-```
-
-What `sawyer run` does:
-1. Detects Ollama -- starts it if not running
-2. Discovers models -- lists what's available with sizes
-3. Starts Sawyer router -- OpenAI-compatible API on port 8000
-4. Prints config -- exact copy-paste lines for your agent
-5. Opens browser -- chat UI at `http://localhost:8000`
-6. Launches agent -- Hermes by default, configurable via `--agent`
-
-If you just want the chat UI and API:
-
-**bash / Git Bash:**
-```bash
-sawyer chat                    # Web UI + OpenAI-compatible API
-sawyer chat --ollama-bridge    # Also serve local Ollama to the network
-```
-
-**PowerShell:**
-```powershell
-sawyer chat                    # Web UI + OpenAI-compatible API
-sawyer chat --ollama-bridge    # Also serve local Ollama to the network
-```
-
-### Provider Dashboard
-
-When serving, Sawyer hosts a real-time dashboard at `http://localhost:8000/`. You'll see:
-
-- **Daily token chart** — bar graph of tokens served over the last 7 days
-- **Weekly summary** — total tokens, earnings, uptime, average daily tokens
-- **Daily breakdown table** — date, tokens, requests, latency, uptime, earnings, errors
-- **Model breakdown** — which models you served tokens for
-- **Expert breakdown** — which expert shards you ran
-- **Tier badge** — your hardware tier and earnings multiplier (1x-4x)
-- **Payout info** — available balance, total earned, total paid, next payout date
-
-API endpoints for programmatic access:
-
-```
-GET /api/stats              — JSON stats for the current provider
-GET /api/stats/{id}         — JSON stats for a specific provider
-```
-
-The dashboard auto-refreshes every 30 seconds.
-
-### One-Click Install (Windows)
-
-Double-click `sawyer.bat` in the repo, or run the PowerShell installer for a desktop shortcut and Start Menu entry:
-
-```powershell
-irm https://infill.systems/install/sawyer.ps1 | iex
-```
-
-To uninstall: `.\install_sawyer.ps1 -Uninstall`
-
----
-
-## Why It Works
-
-- **MoE is more distributable than dense inference.** Experts are independent sub-networks. Unlike tensor parallelism (which splits a single matrix across GPUs), each expert runs its own forward pass. MoE is more distributable than dense tensor-parallel inference because experts are independently activated, but Sawyer's core engineering challenge is keeping routing, expert execution, and aggregation fast enough to feel local.
-- **Sparsity means efficiency.** Only ~25% of parameters activate per token on Mixtral. The network doesn't pay for dormant compute.
-- **Quantized models fit on consumer hardware.** Q4_K_M Mixtral expert ~1.5GB. A 3090 can host 2-3 experts comfortably alongside other workloads.
-- **14-day free trial removes the barrier.** Developers try without commitment. $15/mo Pro is the real entry point — high enough to fund real host payouts, low enough to beat every major API.
-- **Hardware investment is rewarded.** Tier 4 (24GB+) earns 4x per token compared to Tier 1 (4GB). Your 4090 pays for itself.
-
----
-
-## Agent Integration
-
-Sawyer exposes an OpenAI-compatible `/v1/chat/completions` endpoint. Any agent framework that supports custom OpenAI base URLs can use Sawyer as its LLM backend -- no SDK changes needed.
-
-### Quick Start
-
-**bash / Git Bash:**
-```bash
-sawyer run                    # Starts Ollama + Sawyer + Hermes
-```
-
-**PowerShell:**
-```powershell
-sawyer run                    # Starts Ollama + Sawyer + Hermes
-```
-
-### Manual Configuration
-
-If you prefer to configure agents manually:
-
-**Hermes (bash):**
-```bash
-hermes config set model.base_url http://localhost:8000/v1
-hermes config set model.provider openai_compatible
-hermes config set model.default glm-5.1:cloud
-```
-
-**Hermes (PowerShell):**
-```powershell
-hermes config set model.base_url "http://localhost:8000/v1"
-hermes config set model.provider openai_compatible
-hermes config set model.default "glm-5.1:cloud"
-```
-
-**Claude Code (bash):**
-```bash
-OPENAI_API_KEY=sawyer OPENAI_BASE_URL=http://localhost:8000/v1 claude
-```
-
-**Claude Code (PowerShell):**
-```powershell
-$env:OPENAI_API_KEY="sawyer"; $env:OPENAI_BASE_URL="http://localhost:8000/v1"; claude
-```
-
-**Cursor / Continue / Aider (bash):**
-```bash
-export OPENAI_API_KEY=sawyer
-export OPENAI_BASE_URL=http://localhost:8000/v1
-```
-
-**Cursor / Continue / Aider (PowerShell):**
-```powershell
-$env:OPENAI_API_KEY="sawyer"
-$env:OPENAI_BASE_URL="http://localhost:8000/v1"
-```
-
-**Python (any shell):**
-```python
-from openai import OpenAI
-
-client = OpenAI(
-    api_key="sawyer",
-    base_url="http://localhost:8000/v1",
-)
-response = client.chat.completions.create(
-    model="glm-5.1:cloud",
-    messages=[{"role": "user", "content": "Hello"}],
-)
-```
-
-**curl (bash):**
-```bash
-curl http://localhost:8000/v1/chat/completions \
-  -d '{"model":"glm-5.1:cloud","messages":[{"role":"user","content":"hello"}]}' \
-  -H "Content-Type: application/json"
-```
-
-**curl (PowerShell):**
-```powershell
-Invoke-RestMethod -Uri "http://localhost:8000/v1/chat/completions" `
-  -Method Post -ContentType "application/json" `
-  -Body '{"model":"glm-5.1:cloud","messages":[{"role":"user","content":"hello"}]}'
-```
-
-### Supported Frameworks
-
-Hermes, OpenClaw, Claude Code, Cursor, Continue, Aider, Cline, LangChain, LlamaIndex, CrewAI, AutoGPT, and any other OpenAI-compatible client.
-
-Full integration guides with config examples for every framework: [`docs/agent-integration.md`](docs/agent-integration.md)
 
 ---
 
