@@ -1,3 +1,5 @@
+<div align="center"><img src="Sawyer_Agent_Github_Readme_Logo.png" alt="Sawyer Agent on Bedrock" width="800"></div>
+
 # Sawyer — Distributed MoE Inference Network
 
 [![PyPI](https://img.shields.io/pypi/v/sawyer-core?color=%2312c7ef&label=pypi%3A%20sawyer-core)](https://pypi.org/project/sawyer-core/)
