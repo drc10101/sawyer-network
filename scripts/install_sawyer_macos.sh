@@ -25,9 +25,9 @@ YELLOW='\033[0;33m'
 BOLD='\033[1m'
 NC='\033[0m'
 
-REPO="drc10101/sawyer"
+REPO="drc10101/sawyer-network"
 PKG="sawyer-core"
-VERSION="0.6.0"
+VERSION="0.7.0"
 FAST_LLAMA_TAG="sawyer-fast-llama-v0.6.0"
 FAST_LLAMA_REPO="drc10101/llama.cpp"
 BIN_DIR="${HOME}/.sawyer/bin"
@@ -147,12 +147,12 @@ ok "sawyer-core installed"
 
 # Create wrapper script
 mkdir -p "${BIN_DIR}"
-cat > "${BIN_DIR}/sawyer-agent" << WRAPPER
+cat > "${BIN_DIR}/sawyer" << WRAPPER
 #!/usr/bin/env bash
 source "${VENV_DIR}/bin/activate"
 exec python -m sawyer.cli "\$@"
 WRAPPER
-chmod +x "${BIN_DIR}/sawyer-agent"
+chmod +x "${BIN_DIR}/sawyer"
 
 # ── Step 4: Sawyer Fast Llama binary ──
 info "Step 4/4: Downloading Sawyer Fast Llama..."
@@ -187,20 +187,20 @@ info "Validating installation..."
 
 VALIDATION_ERRORS=0
 
-SAWYER_BIN="${BIN_DIR}/sawyer-agent"
+SAWYER_BIN="${BIN_DIR}/sawyer"
 if [ -f "$SAWYER_BIN" ]; then
     VERSION_CHECK=$("$SAWYER_BIN" --help 2>&1 | head -1 || true)
     if echo "$VERSION_CHECK" | grep -qi "sawyer"; then
-        ok "sawyer-agent command works"
+        ok "sawyer command works"
     else
-        warn "sawyer-agent --help returned unexpected output"
+        warn "sawyer --help returned unexpected output"
         VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
     fi
 else
     if $PYTHON -m sawyer.cli --help &>/dev/null; then
-        ok "sawyer-agent works via python -m sawyer"
+        ok "sawyer works via python -m sawyer"
     else
-        err "sawyer-agent command not found"
+        err "sawyer command not found"
         VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
     fi
 fi
@@ -222,16 +222,16 @@ fi
 
 echo ""
 echo -e "  ${BOLD}Quick start:${NC}"
-echo -e "  ${CYAN}sawyer-agent chat${NC}      Start the chat client (web UI at http://localhost:8000)"
-echo -e "  ${CYAN}sawyer-agent serve${NC}     Start serving expert inference requests"
-echo -e "  ${CYAN}sawyer-agent run${NC}       One command: start Sawyer + Ollama + agent"
+echo -e "  ${CYAN}sawyer chat${NC}      Start the chat client (web UI at http://localhost:8000)"
+echo -e "  ${CYAN}sawyer serve${NC}     Start serving expert inference requests"
+echo -e "  ${CYAN}sawyer run${NC}       One command: start Sawyer + Ollama + agent"
 echo ""
 echo -e "  ${YELLOW}macOS: For GPU acceleration, install Ollama from https://ollama.com${NC}"
-echo -e "  ${YELLOW}       Then: ollama pull llama3 && sawyer-agent run${NC}"
+echo -e "  ${YELLOW}       Then: ollama pull llama3 && sawyer run${NC}"
 echo ""
 
 if [ "$VALIDATION_ERRORS" -gt 0 ]; then
-    echo -e "  ${YELLOW}If 'sawyer-agent' command not found, run:${NC}"
+    echo -e "  ${YELLOW}If 'sawyer' command not found, run:${NC}"
     echo -e "  ${CYAN}source ${SHELL_RC}${NC}"
     echo ""
 fi

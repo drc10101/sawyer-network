@@ -25,7 +25,7 @@ Sawyer distributes Mixture-of-Experts models across consumer GPUs. When a prompt
 
 We're in early access. The router is live, the benchmarking tool shows 64.5% prefill speedup over vanilla llama.cpp, and we need nodes to build out the network.
 
-The code is open source: https://github.com/drc10101/sawyer
+The code is open source: https://github.com/drc10101/sawyer-network
 
 Happy to answer questions.
 
@@ -52,7 +52,7 @@ Sawyer is a distributed MoE inference network. Your GPU hosts individual expert 
 
 Payouts via Stripe Connect, monthly or quarterly. Tax reporting included.
 
-Open source: https://github.com/drc10101/sawyer
+Open source: https://github.com/drc10101/sawyer-network
 
 Ask me anything.
 
@@ -70,7 +70,7 @@ The interesting technical challenge: MoE models only activate 2-6 experts per to
 
 We benchmarked 64.5% prefill speedup over vanilla llama.cpp with our optimized binary.
 
-If you have an idle NVIDIA GPU (6GB+ VRAM) and want to earn from it: https://github.com/drc10101/sawyer
+If you have an idle NVIDIA GPU (6GB+ VRAM) and want to earn from it: https://github.com/drc10101/sawyer-network
 
 ---
 
@@ -80,7 +80,7 @@ Short version for Discord:
 
 Got an idle RTX 3090/4090? Sawyer (open source distributed MoE inference) is recruiting GPU hosts. 70% revenue share, Stripe payouts, one command to start. Your GPU holds 1-3 expert files (~1.5GB each) and serves inference in the background. No Docker, no K8s. Just `sawyer register && sawyer serve --gpu`.
 
-Details: https://github.com/drc10101/sawyer
+Details: https://github.com/drc10101/sawyer-network
 
 ---
 
@@ -93,5 +93,5 @@ Details: https://github.com/drc10101/sawyer
 - Respond to every comment within 2 hours during the first 24 hours
 - Do NOT mention the kanban or that these are templated posts
 - Link to the landing page (sawyer.infill.systems) for the general audience
-- Link to GitHub (github.com/drc10101/sawyer) for the technical audience
+- Link to GitHub (github.com/drc10101/sawyer-network) for the technical audience
 - When asked about earnings, reference the estimates: RTX 3060 ~$15-50/mo, RTX 3090 ~$40-120/mo, RTX 4090 ~$60-180/mo

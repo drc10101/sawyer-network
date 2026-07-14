@@ -369,7 +369,7 @@ FAQ_HTML = """<!DOCTYPE html>
 
 <main>
   <div class="hero">
-    <img class="hero-logo" src="https://raw.githubusercontent.com/drc10101/sawyer/main/sawyer_logo.png" alt="Sawyer">
+    <img class="hero-logo" src="https://raw.githubusercontent.com/drc10101/sawyer-network/main/sawyer_logo.png" alt="Sawyer">
     <h2>Point your GPU at Sawyer.</h2>
     <p>Your inference is always free. Earn from the compute you share. Run locally or join the network.</p>
   </div>
@@ -516,7 +516,7 @@ sawyer serve</code><button class="copy-btn" onclick="copyCmd(this, 'pip install 
     <details class="faq-item">
       <summary>How do I report a bug or request a feature?</summary>
       <div class="faq-answer">
-        Open an issue on <a href="https://github.com/drc10101/sawyer">GitHub</a> or reach out in the community chat. Sawyer is open source — PRs welcome.
+        Open an issue on <a href="https://github.com/drc10101/sawyer-network">GitHub</a> or reach out in the community chat. Sawyer is open source — PRs welcome.
       </div>
     </details>
   </div>

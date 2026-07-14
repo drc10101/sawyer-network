@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sawyer-core"
-version = "0.6.1"
+version = "0.7.0"
 description = "Distributed MoE inference network — the load is split, friends help"
 readme = "README.md"
 license = {text = "BSL-1.1"}
@@ -53,9 +53,9 @@ inference = [
 
 [project.urls]
 Homepage = "https://sawyer.infill.systems"
-Repository = "https://github.com/drc10101/sawyer"
-Documentation = "https://github.com/drc10101/sawyer#readme"
-Issues = "https://github.com/drc10101/sawyer/issues"
+Repository = "https://github.com/drc10101/sawyer-network"
+Documentation = "https://github.com/drc10101/sawyer-network#readme"
+Issues = "https://github.com/drc10101/sawyer-network/issues"
 
 [project.scripts]
 sawyer = "sawyer.cli:main"

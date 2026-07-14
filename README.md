@@ -309,15 +309,15 @@ Or install from source for development:
 
 **bash / Git Bash:**
 ```bash
-git clone https://github.com/drc10101/sawyer.git
-cd sawyer
+git clone https://github.com/drc10101/sawyer-network.git
+cd sawyer-network
 pip install -e ".[dev]"
 ```
 
 **PowerShell:**
 ```powershell
-git clone https://github.com/drc10101/sawyer.git
-cd sawyer
+git clone https://github.com/drc10101/sawyer-network.git
+cd sawyer-network
 pip install -e ".[dev]"
 ```
 
